@@ -1,30 +1,34 @@
-use std::env;
+use clap::Parser;
+use regex::Regex;
 use std::fs::File;
 use std::io::{self, BufRead};
-//use std::path::Path;
-use regex::Regex;
+
+#[derive(Parser, Debug)]
+#[command(version, 
+about = "Parse spec file for YAML snippets and check there is a matching snippet in the examples directory", 
+long_about = "Snippets in the spec are identified by a comment line with the format ```yaml #sN where N is an integer
+Examples are in files named with snippet number and a .yaml extension, e.g. s1.yaml
+The snippet within the example is identified by a open and closing comment line with the format # tag::s2[] and # end::s2[]")]
+struct Args {
+    /// The path to the spec file
+    #[arg(short, long)]
+    spec_path: std::path::PathBuf,
+    /// The path to the example directory
+    #[arg(short, long)]
+    example_path: std::path::PathBuf,
+}
 
 fn main() -> io::Result<()> {
     // Get the spec path from command-line arguments
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        eprintln!("Usage: {} <spec_path>", args[0]);
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "Spec path not provided"));
-    }
+    let args = Args::parse();
 
-    if args[1] == "-h" {
-        println!("Usage: {} <spec_path>", args[0]);
-        println!("Extract YAML blocks from a markdown file with sections starting with \"```yaml #s<number>\".");
-        return Ok(());
-    }
-
-    let spec_path = &args[1];
+    let spec_path = args.spec_path;
 
     // Open the file with error handling
     let file = match File::open(&spec_path) {
         Ok(f) => f,
         Err(e) => {
-            eprintln!("Error: Could not open file '{}': {}", spec_path, e);
+            eprintln!("Error: Could not open file '{:?}': {}", spec_path, e);
             return Err(e);
         }
     };
@@ -65,10 +69,10 @@ fn main() -> io::Result<()> {
     }
 
     // Print or use the extracted YAML blocks
+
     for (name, block) in yaml_blocks.iter() {
-        println!("YAML Block #{}:\n{}", name, block);
+        println!("YAML Block {}-\n{}", name, block);
     }
 
     Ok(())
 }
-

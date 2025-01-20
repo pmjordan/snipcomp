@@ -20,7 +20,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["testspec.md"],
+            "args": ["--spec-path","testspec.md","--example-path","examples/"],
             "cwd": "${workspaceFolder}"
         },
     ]
