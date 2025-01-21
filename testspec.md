@@ -8,9 +8,8 @@
 meta files). For example:
 
 ```yaml #s1
-MyMap:
-  property1: value
-  property2: [ value1, value2 ]
+line 1 in s1
+line 2 in s2
 ```
 
 #### 1.2.1.2 Placeholders
@@ -18,7 +17,7 @@ MyMap:
 Variations:
 
 
-``` .yang #s2
+```yaml #s2
 metadata: 
   creation-date: 2024-04-14
   date-updated: 2024-05-01

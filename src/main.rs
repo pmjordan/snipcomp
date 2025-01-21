@@ -50,6 +50,20 @@ fn parse_spec_file(spec_path: &std::path::Path) -> io::Result<Vec<(String, Strin
         let line = line?;
 
         if let Some(captures) = start_regex.captures(line.trim()) {
+            if is_in_yaml_block {
+                if line.trim() == "```" {
+                    // Close the current block
+                    is_in_yaml_block = false;
+                    yaml_blocks.push((current_block_name.clone(), current_block.clone()));
+                } else {
+                    if is_in_yaml_block {
+                        // The previous YAML block in the spec was not closed
+                        return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Unclosed YAML block before text'{}'", line)));
+                    }
+                }
+                continue;
+            }
+    
             is_in_yaml_block = true;
             current_block.clear();
             current_block_name = captures[1].to_string();
@@ -67,10 +81,11 @@ fn parse_spec_file(spec_path: &std::path::Path) -> io::Result<Vec<(String, Strin
             current_block.push('\n');
         }
     }
-
     if is_in_yaml_block {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "Unclosed YAML block at end of file"));
+        // The last YAML block in the spec was not closed
+        return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Unclosed YAML block before end of file")));
     }
+
 
     Ok(yaml_blocks)
 }
@@ -118,6 +133,21 @@ mod tests {
     fn test_incomplete_yaml_block() {
         let mut file = NamedTempFile::new().unwrap();
         writeln!(file, "```yaml #s1\nkey: value").unwrap();
+
+        let args = Args {
+            spec_path: file.path().to_path_buf(),
+            example_path: std::path::PathBuf::new(),
+        };
+
+        let result = parse_spec_file(&args.spec_path);
+        // The incomplete block should cause an error
+        assert!(result.is_err());
+    }
+    #[test]
+    fn test_incomplete_yaml_block_at_end() {
+        let mut file = NamedTempFile::new().unwrap();
+        writeln!(file, "```yaml #s1\nkey: value\n```").unwrap();
+        writeln!(file, "```yaml #s2\nanother_key: another_value\n").unwrap();
 
         let args = Args {
             spec_path: file.path().to_path_buf(),

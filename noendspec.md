@@ -1,11 +1,9 @@
 meta files). For example:
 
 ```yaml #s1
-MyMap:
-  property1: value
+line in s1
 ```
 Variations:
 
 ```yaml #s2
-metadata: 
-  creation-date: 2024-04-14
+line in s2 which is not closed
