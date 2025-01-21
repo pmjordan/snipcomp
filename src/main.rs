@@ -68,6 +68,10 @@ fn parse_spec_file(spec_path: &std::path::Path) -> io::Result<Vec<(String, Strin
         }
     }
 
+    if is_in_yaml_block {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "Unclosed YAML block at end of file"));
+    }
+
     Ok(yaml_blocks)
 }
 
@@ -120,8 +124,9 @@ mod tests {
             example_path: std::path::PathBuf::new(),
         };
 
-        let result = parse_spec_file(&args.spec_path).unwrap();
-        assert_eq!(result.len(), 0);
+        let result = parse_spec_file(&args.spec_path);
+        // The incomplete block should cause an error
+        assert!(result.is_err());
     }
 
 }
