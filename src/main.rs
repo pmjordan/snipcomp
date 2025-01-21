@@ -1,7 +1,7 @@
 use clap::Parser;
 use regex::Regex;
 use std::fs::File;
-use std::io::{self, BufRead};
+use std::io::{self, BufRead, Read};
 
 
 #[derive(Parser, Debug)]
@@ -23,7 +23,7 @@ fn main() -> io::Result<()> {
     // Get the spec path from command-line arguments
     let args = Args::parse();
 
-    let yaml_blocks = parse_spec_file(&args.spec_path).unwrap();
+    let yaml_blocks = parse_spec_file(&args.spec_path, &args.example_path).unwrap();
 
 
     // Print or use the extracted YAML blocks
@@ -35,7 +35,7 @@ fn main() -> io::Result<()> {
     Ok(())
     
 }
-fn parse_spec_file(spec_path: &std::path::Path) -> io::Result<Vec<(String, String)>> {
+fn parse_spec_file(spec_path: &std::path::Path, example_path: &std::path::Path) -> io::Result<Vec<(String, String)>> {
     let file = File::open(spec_path)?;
     let reader = io::BufReader::new(file);
 
@@ -67,6 +67,10 @@ fn parse_spec_file(spec_path: &std::path::Path) -> io::Result<Vec<(String, Strin
             is_in_yaml_block = true;
             current_block.clear();
             current_block_name = captures[1].to_string();
+
+            let mycontent = get_example_snippet(example_path,&current_block_name).unwrap();
+            println!("Example snippet: {}", mycontent);
+
             continue;
         }
 
@@ -86,8 +90,15 @@ fn parse_spec_file(spec_path: &std::path::Path) -> io::Result<Vec<(String, Strin
         return Err(io::Error::new(io::ErrorKind::InvalidData, format!("Unclosed YAML block before end of file")));
     }
 
-
     Ok(yaml_blocks)
+}
+
+fn get_example_snippet(directory: &std::path::Path, snip_id: &str) -> io::Result<String> {
+    let file_path = directory.join(format!("s{}.yaml", snip_id));
+    let mut file = File::open(file_path)?;
+    let mut content = String::new();
+    file.read_to_string(&mut content)?;
+    Ok(content)
 }
 
 #[cfg(test)]
@@ -159,4 +170,17 @@ mod tests {
         assert!(result.is_err());
     }
 
+//     #[test]
+//     fn test_get_example_snippet() {
+
+//         let args = Args {
+//             snippet_id: "s1",
+//             example_path: std::path::PathBuf::new(),
+//         };
+
+//         let result = get_example_snippet(args.snippet_id, &args.example_path).unwrap();
+//         println!("Result: {}", result);
+//         //assert_eq!(result, "key: value\n");
+//     }
 }
+
