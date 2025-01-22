@@ -1,21 +1,11 @@
-![OASIS Logo](http://docs.oasis-open.org/templates/OASISLogo-v3.0.png)
 
--------
-
-#
-
-
-meta files). For example:
+text before first snip
 
 ```yaml #s1
 line 1 in s1
 line 2 in s2
 ```
-
-#### 1.2.1.2 Placeholders
-
-Variations:
-
+text between 1 and 2
 
 ```yaml #s2
 metadata: 
