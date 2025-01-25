@@ -101,9 +101,14 @@ fn main() -> io::Result<()> {
 
 fn get_example_snippet(directory: &std::path::Path, snip_id: &str) -> io::Result<String> {
     let file_path = directory.join(format!("s{}.yaml", snip_id));
-    let mut file = File::open(file_path)?;
+    let example_file_result = File::open(file_path);
+        let mut example_file= match example_file_result {
+            Ok(file) => file,
+            Err(error) => panic!("Can't open the file: {error:?}"),
+            };
     let mut content = String::new();
-    file.read_to_string(&mut content)?;
+    example_file.read_to_string(&mut content)?;
+
 //TODO allow any number of spaces before the tag and between hash and tag
     let start_tag = format!("# tag::s{}[]", snip_id);
     let end_tag = format!("# end::s{}[]", snip_id);
@@ -117,7 +122,7 @@ fn get_example_snippet(directory: &std::path::Path, snip_id: &str) -> io::Result
             continue;
         }
         if line.trim() == end_tag {
-            in_snippet = false;
+            //We don't care what comes after the end tag
             break;
             //TODO error if end tag not found
         }
@@ -145,37 +150,26 @@ fn write_output(output: &str) -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use assert_cmd::assert::AssertError;
+
+    use std::path::Path;
+    //use assert_cmd::assert::AssertError;
 
     use super::*;
     use std::io::Write;
 
 
     #[test]
-    fn test_example_snippet_found() {
-        let file_path = std::path::Path::new("s1.yaml");
-        {
-            let mut file = File::create(file_path).unwrap();
-            writeln!(file, "text before tag\n     # tag::s1[]\ntext in snippet\nlast row of snippet\n# end::s1[]\ntext after snippet").unwrap();
-        }
-
-        let result = get_example_snippet(file_path.parent().unwrap(), "1").unwrap();
-        assert_eq!(result, "text in snippet\nlast row of snippet\n");
-
-        std::fs::remove_file(file_path).unwrap();
+    fn test_snippet_found() {
+        let examples_dir = Path::new("examples");
+        let result = get_example_snippet(examples_dir, "1").unwrap();
+        assert_eq!(result, "text in snippet:\n  last row of snippet:\n");
     }
 
     #[test]
-    fn test_example_snippet_not_found() {
-        let file_path = std::path::Path::new("s1.yaml");
-        {
-            let mut file = File::create(file_path).unwrap();
-            writeln!(file, "# tag::s1[]\nexample_key: example_value\n# end::s1[]").unwrap();
-        }
-        let result = get_example_snippet(file_path.parent().unwrap(), "2").unwrap();
-        //TODO assert something
-
-        std::fs::remove_file(file_path).unwrap();
+    fn test_example_directory_not_found() {
+        let examples_dir = Path::new("not_there");
+        let result = get_example_snippet(examples_dir, "1").unwrap();
+        println!("{}",result);
     }
 
     #[test]
@@ -186,7 +180,7 @@ mod tests {
             writeln!(file, "# tag::s1[]\nexample_key: example_value").unwrap();
         }
         let result = get_example_snippet(file_path.parent().unwrap(), "1").unwrap();
-        //TODO assert error
+        println!("test example snippet incomplete {}", result);
 
         std::fs::remove_file(file_path).unwrap();
     }

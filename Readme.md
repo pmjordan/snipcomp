@@ -2,7 +2,7 @@
 
 SnipComp is a Rust-based command-line tool designed to be used with [TOSCA Specs](https://github.com/oasis-tcs/tosca-specs)
 
-It looks for YAML blocks called snippets from with a TOSCA Spec markdown file and replaces them with snippets extracted from the supplied examples directory having teh same ID. The result is sent to stdout. A user may then use standrd compare tools to see where spec snippets differ from example snippets and update teh spec as required.
+It looks for YAML blocks called snippets from with a TOSCA Spec markdown file and replaces them with snippets extracted from the supplied examples directory having the same ID. The result is sent to stdout. A user may then use standard compare tools to see where spec snippets differ from example snippets and update the spec as required.
 
 The program uses a regular expression to identify the start of YAML blocks, which are marked by lines beginning with "```yaml #s<number>". The examples are expected to be in files named with the ID and the example snippets are marked at the start with tags of the format # tag::s1[] and at the end with # end::s1[]
 
@@ -32,8 +32,11 @@ cargo run snipcomp --help
 
 Typically
 ```sh
-cargo run snipcomp -- 
+cargo run snipcomp -- -s examples/testspec.md -e toscaexamples/ > out.md
 ```
+
+## Directory Structure
+In [TOSCA Specs](https://github.com/oasis-tcs/tosca-specs) the examples containing the snippets are held in a directory called examples but that folder name is normally used in Rust projects for examples relevant to the code and its tests so here the example snippets are held in a directory called toscaexamples.
 
 ## License
 
