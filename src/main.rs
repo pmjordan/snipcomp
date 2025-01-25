@@ -26,7 +26,12 @@ fn main() -> io::Result<()> {
     // Get the spec path from command-line arguments
     let args = Args::parse();
 
-    let file = File::open(&args.spec_path)?;
+    let file = File::open(&args.spec_path).map_err(|error| {
+        io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("Error opening spec file '{}': {}", args.spec_path.display(), error),
+        )
+    })?;
     let reader = io::BufReader::new(file);
 
     let mut is_in_yaml_block = false;
@@ -101,11 +106,12 @@ fn main() -> io::Result<()> {
 
 fn get_example_snippet(directory: &std::path::Path, snip_id: &str) -> io::Result<String> {
     let file_path = directory.join(format!("s{}.yaml", snip_id));
-    let example_file_result = File::open(file_path);
-        let mut example_file= match example_file_result {
-            Ok(file) => file,
-            Err(error) => panic!("Can't open the file: {error:?}"),
-            };
+    let mut example_file = File::open(&file_path).map_err(|error| {
+        io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("Error opening file '{}': {}", file_path.display(), error),
+        )
+    })?;
     let mut content = String::new();
     example_file.read_to_string(&mut content)?;
 
@@ -124,7 +130,7 @@ fn get_example_snippet(directory: &std::path::Path, snip_id: &str) -> io::Result
         if line.trim() == end_tag {
             //We don't care what comes after the end tag
             break;
-            //TODO error if end tag not found
+
         }
         if in_snippet {
             snippet_content.push_str(line);
@@ -135,7 +141,7 @@ fn get_example_snippet(directory: &std::path::Path, snip_id: &str) -> io::Result
     if snippet_content.is_empty() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
-            format!("Snippet {} not found in file", snip_id),
+            format!("Snippet {} not found in file {}", snip_id, file_path.display()),
         ));
     }
 
@@ -155,7 +161,6 @@ mod tests {
     //use assert_cmd::assert::AssertError;
 
     use super::*;
-    use std::io::Write;
 
 
     #[test]
@@ -168,20 +173,36 @@ mod tests {
     #[test]
     fn test_example_directory_not_found() {
         let examples_dir = Path::new("not_there");
-        let result = get_example_snippet(examples_dir, "1").unwrap();
-        println!("{}",result);
+        let result = get_example_snippet(examples_dir, "1");
+        assert!(
+            result.unwrap_err().to_string().contains("Error opening file 'not_there/s1.yaml': No such file or directory"),
+        );
+    }
+
+    #[test]
+    fn test_example_snippet_not_started() {
+        let examples_dir = Path::new("examples");
+        let result = get_example_snippet(examples_dir, "20");
+        assert!(
+            result.unwrap_err().to_string().contains("Snippet 20 not found in file examples/s20.yaml"),
+        );
     }
 
     #[test]
     fn test_example_snippet_incomplete() {
-        let file_path = std::path::Path::new("s1.yaml");
-        {
-            let mut file = File::create(file_path).unwrap();
-            writeln!(file, "# tag::s1[]\nexample_key: example_value").unwrap();
-        }
-        let result = get_example_snippet(file_path.parent().unwrap(), "1").unwrap();
-        println!("test example snippet incomplete {}", result);
-
-        std::fs::remove_file(file_path).unwrap();
+        let examples_dir = Path::new("examples");
+        let result = get_example_snippet(examples_dir, "10");
+        assert!(
+            result.unwrap_err().to_string().contains("Snippet 10 not found in file examples/s10.yaml"),
+        );
     }
-}
+
+    #[test]
+    fn test_example_snippet_wrong_number() {
+        let examples_dir = Path::new("examples");
+        let result = get_example_snippet(examples_dir, "30");
+        assert!(
+            result.unwrap_err().to_string().contains("Snippet 30 not found in file examples/s30.yaml"),
+        );
+    }
+} 

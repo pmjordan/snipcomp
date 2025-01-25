@@ -1,0 +1,5 @@
+text before tag but tag number does not match filename:
+# tag::s1[]
+text in snippet:
+  last row of snippet:
+# end::s1[]
