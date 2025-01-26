@@ -1,0 +1,6 @@
+text before tag:
+  #   tag::s40[]
+text in snippet:
+  last row of snippet. end tag has space:
+#     end::s40[]
+text after tag:

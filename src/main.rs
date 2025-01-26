@@ -45,8 +45,7 @@ fn main() -> io::Result<()> {
         let line = line?;
 
         if let Some(captures) = start_regex.captures(line.trim()) {
-            // Start of a new yaml block so send to stdout
-            //println!("{}", line);
+            // Start of a new yaml block so add to output
             my_output.push_str(&line);my_output.push('\n');
 
             if is_in_yaml_block {
@@ -72,10 +71,8 @@ fn main() -> io::Result<()> {
         if is_in_yaml_block && line.trim() == "```" {
             // End of the current block so substitute snippet
             let snippet = get_example_snippet(&args.example_path, &current_block_name)?;
-            //print!("{}",snippet);
             my_output.push_str(&snippet);
             // And output the end marker
-            //println!("{}", line);
             my_output.push_str(&line);my_output.push('\n');
             is_in_yaml_block = false;
             continue;
@@ -85,9 +82,8 @@ fn main() -> io::Result<()> {
             current_block.push_str(&line);
             current_block.push('\n');
         }
-        // Not in yaml block so send to stdout
+        // Not in yaml block so add to output
         else {
-            //println!("{}", line);
             my_output.push_str(&line);my_output.push('\n');
         }
     }
@@ -115,22 +111,20 @@ fn get_example_snippet(directory: &std::path::Path, snip_id: &str) -> io::Result
     let mut content = String::new();
     example_file.read_to_string(&mut content)?;
 
-//TODO allow any number of spaces before the tag and between hash and tag
-    let start_tag = format!("# tag::s{}[]", snip_id);
-    let end_tag = format!("# end::s{}[]", snip_id);
+    let start_tag_pattern = Regex::new(&format!(r"# +tag::s{}\[\]", snip_id)).unwrap();
+    let end_tag_pattern = Regex::new(&format!(r"# +end::s{}\[\]", snip_id)).unwrap();
 
     let mut in_snippet = false;
     let mut snippet_content = String::new();
 
     for line in content.lines() {
-        if line.trim() == start_tag {
+        if start_tag_pattern.is_match(line.trim()) {
             in_snippet = true;
             continue;
         }
-        if line.trim() == end_tag {
+        if end_tag_pattern.is_match(line.trim()) {
             //We don't care what comes after the end tag
             break;
-
         }
         if in_snippet {
             snippet_content.push_str(line);
@@ -158,10 +152,7 @@ fn write_output(output: &str) -> io::Result<()> {
 mod tests {
 
     use std::path::Path;
-    //use assert_cmd::assert::AssertError;
-
     use super::*;
-
 
     #[test]
     fn test_snippet_found() {
@@ -205,4 +196,12 @@ mod tests {
             result.unwrap_err().to_string().contains("Snippet 30 not found in file examples/s30.yaml"),
         );
     }
+
+    #[test]
+    fn test_snippet_with_space_found() {
+        let examples_dir = Path::new("examples");
+        let result = get_example_snippet(examples_dir, "40").unwrap();
+        assert_eq!(result, "text in snippet:\n  last row of snippet. end tag has space:\n");
+    }
 } 
+
