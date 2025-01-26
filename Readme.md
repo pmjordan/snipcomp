@@ -25,6 +25,14 @@ Install Rust
 ```sh
 cargo install snipcomp
 ```
+
+Stage 3
+Ensure the target execution environment is linux x86-64
+Clone this repo to folder
+```sh
+target/release/snipcomp -h
+```
+
 ## Usage
 ```sh
 cargo run snipcomp --help
