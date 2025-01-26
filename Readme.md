@@ -35,6 +35,11 @@ Typically
 cargo run snipcomp -- -s examples/testspec.md -e toscaexamples/ > out.md
 ```
 
+Alternatively, to get a report of which snippets do not match the examples (given that all examples exist) use
+```sh
+cargo run snipcomp -- -s examples/testspec.md -e toscaexamples/ -o report
+```
+
 ## Directory Structure
 In [TOSCA Specs](https://github.com/oasis-tcs/tosca-specs) the examples containing the snippets are held in a directory called examples but that folder name is normally used in Rust projects for examples relevant to the code and its tests so here the example snippets are held in a directory called toscaexamples.
 
