@@ -13,7 +13,9 @@ when complete the intention is to move this repo into a new directory within the
 
 Stage 1 (The only way supported so far)
 Install Rust.
+
 Clone this repo to folder 
+
 cd to the folder
 ```sh
 cargo run snipcomp --help
@@ -28,9 +30,13 @@ cargo install snipcomp
 
 Stage 3
 Ensure the target execution environment is linux x86-64
-Clone this repo to folder
+
+Download the executable from [https://github.com/pmjordan/snipcomp/releases](https://github.com/pmjordan/snipcomp/releases)
+
+Make the file executable
+
 ```sh
-target/release/snipcomp -h
+snipcomp -h
 ```
 
 ## Usage
