@@ -20,7 +20,7 @@ fn wrong_args () -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("-x").arg("notthere");
     cmd.assert()
         .failure()
-        .stderr(predicate::str::contains("Usage: snipcomp --spec-path <SPEC_PATH> --example-path <EXAMPLE_PATH>"));
+        .stderr(predicate::str::contains("Usage: snipcomp [OPTIONS] --spec-path <SPEC_PATH> --example-path <EXAMPLE_PATH>"));
 
     Ok(())
 }
@@ -34,5 +34,18 @@ fn file_missing() -> Result<(), Box<dyn std::error::Error>> {
     cmd.assert()
         .failure()
         .stderr(predicate::str::contains("examples/not_there"));
+    Ok(())
+}
+
+#[test]
+fn file_report() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("snipcomp")?;
+
+    cmd.arg("-s").arg("examples/testspec.md");
+    cmd.arg("-e").arg("toscaexamples");
+    cmd.arg("-o").arg("report");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("Unable to match block:"));
     Ok(())
 }

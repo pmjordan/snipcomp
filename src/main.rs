@@ -2,7 +2,13 @@
 use clap::Parser;
 use regex::Regex;
 use std::fs::File;
-use std::io::{self, BufRead, Read, Write};
+use std::io::{self, BufRead, Read};
+
+#[derive(clap::ValueEnum, Clone, Debug)]
+enum OutputType {
+    Spec,
+    Report
+}
 
 #[derive(Parser, Debug)]
 #[command(
@@ -19,6 +25,9 @@ struct Args {
     /// The path to the example directory
     #[arg(short, long)]
     example_path: std::path::PathBuf,
+    /// The required output type
+    #[arg(short, long, value_enum, default_value_t = OutputType::Spec)]
+    output_type: OutputType
 }
 
 fn main() -> io::Result<()> {
@@ -26,10 +35,11 @@ fn main() -> io::Result<()> {
     // Get the spec path from command-line arguments
     let args = Args::parse();
 
+
     let file = File::open(&args.spec_path).map_err(|error| {
         io::Error::new(
             io::ErrorKind::NotFound,
-            format!("Error opening spec file '{}': {}", args.spec_path.display(), error),
+            format!("Error opening spec file '{}': {}", &args.spec_path.display(), error),
         )
     })?;
     let reader = io::BufReader::new(file);
@@ -37,7 +47,8 @@ fn main() -> io::Result<()> {
     let mut is_in_yaml_block = false;
     let mut current_block = String::new();
     let mut current_block_name = String::new();
-    let mut my_output = String::new();
+    let mut output_spec = String::new();
+    let mut output_rep: String = String::new();
 
     let start_regex = Regex::new(r"^```yaml #s(\d+)").unwrap();
 
@@ -46,7 +57,7 @@ fn main() -> io::Result<()> {
 
         if let Some(captures) = start_regex.captures(line.trim()) {
             // Start of a new yaml block so add to output
-            my_output.push_str(&line);my_output.push('\n');
+            output_spec.push_str(&line);output_spec.push('\n');
 
             if is_in_yaml_block {
                 if line.trim() == "```" {
@@ -71,9 +82,18 @@ fn main() -> io::Result<()> {
         if is_in_yaml_block && line.trim() == "```" {
             // End of the current block so substitute snippet
             let snippet = get_example_snippet(&args.example_path, &current_block_name)?;
-            my_output.push_str(&snippet);
+            output_spec.push_str(&snippet);
             // And output the end marker
-            my_output.push_str(&line);my_output.push('\n');
+            output_spec.push_str(&line);output_spec.push('\n');
+
+            // Check if example = snippet
+            if current_block == snippet {
+                output_rep.push_str(&format!("Block and example match for:{}\n", current_block_name));
+            } else {
+                output_rep.push_str(&format!("Unable to match block:{}\n", current_block_name));
+            }
+
+            // set search status flg
             is_in_yaml_block = false;
             continue;
         }
@@ -84,7 +104,7 @@ fn main() -> io::Result<()> {
         }
         // Not in yaml block so add to output
         else {
-            my_output.push_str(&line);my_output.push('\n');
+            output_spec.push_str(&line);output_spec.push('\n');
         }
     }
 
@@ -95,7 +115,7 @@ fn main() -> io::Result<()> {
         ));
     }
 
-    write_output(&my_output)?;
+    let _write_result = write_output(&output_spec, &output_rep, &args.output_type).unwrap();
 
     Ok(())
 }
@@ -142,11 +162,15 @@ fn get_example_snippet(directory: &std::path::Path, snip_id: &str) -> io::Result
     Ok(snippet_content)
 }
 
-fn write_output(output: &str) -> io::Result<()> {
-    let stdout = io::stdout();
-    let mut handle = stdout.lock();
-    handle.write_all(output.as_bytes())
+fn write_output(spec: &str, report: &String, output_type: &OutputType) -> io::Result<()> {
+    match output_type {
+        OutputType::Report => println!("{}", report),
+        OutputType::Spec => println!("{}", spec),
+    }
+
+    Ok(())
 }
+
 
 #[cfg(test)]
 mod tests {
