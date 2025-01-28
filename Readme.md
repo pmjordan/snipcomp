@@ -11,33 +11,23 @@ when complete the intention is to move this repo into a new directory within the
 
 ## Installation
 
-Stage 1 (The only way supported so far)
+Option 1
 Install Rust.
 
-Clone this repo to folder 
+Clone this repo to folder.
 
-cd to the folder
+cd to the folder and use cargo to run it:
 ```sh
-cargo run snipcomp --help
+cargo run -- --help
 ```
 
-Stage 2 (Not yet implemented)
-Install Rust
-
-```sh
-cargo install snipcomp
-```
-
-Stage 3
+Option 2
 Ensure the target execution environment is linux x86-64
 
 Download the executable from [https://github.com/pmjordan/snipcomp/releases](https://github.com/pmjordan/snipcomp/releases)
 
-Make the file executable
+Make the file executable and then run it:
 
-```sh
-snipcomp -h
-```
 
 ## Usage
 ```sh
